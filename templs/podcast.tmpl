@@ -1,0 +1,25 @@
+{{define "head"}}
+{{end}}
+
+{{ define "main" }}
+<h1>List of episodes</h1>
+{{ if .Count }}
+    <p>Found {{ .Count }} episodes</p>
+    
+        {{ range .Items }}
+            <article>
+                <a href="/episode/{{ .GUID }}">{{ .Title }}</a>
+                <p>{{ .Description }}</p>
+                <p>Published: {{ .DatePublished }}</p>
+                <p>Duration: {{ .Duration }}</p>
+                <p>Enclosure URL: {{ .EnclosureUrl }}</p>
+            </article>
+        {{ end }}
+    </ul>
+{{ else }}
+    <p>No episodes found</p>
+{{ end }}
+{{ end }}
+
+{{ define "scripts" }}
+{{end}}
