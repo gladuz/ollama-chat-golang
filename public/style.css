@@ -1,0 +1,12 @@
+.chat_container {
+    display: flex;
+    flex-direction: column;
+    height: 300px;
+}
+
+.chat_result {
+    flex: 1;
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #000;
+}

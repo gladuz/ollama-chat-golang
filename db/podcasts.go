@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"crypto/sha1"
@@ -27,6 +27,7 @@ type PodcastFeed struct {
 	LastUpdateTime int    `json:"lastUpdateTime"`
 	Popularity     int    `json:"popularity"`
 	EpisodeCount   int    `json:"episodeCount"`
+	GUID           string `json:"guid"`
 }
 
 type PodSearchResult struct {
@@ -49,13 +50,18 @@ type PodcastEpisode struct {
 	GUID            string `json:"guid"`
 }
 
+type PodcastEpisodeResult struct {
+	Status string         `json:"status"`
+	Episode PodcastEpisode `json:"episode"`
+}
+
 type PodcastFeedResult struct {
 	Items []PodcastEpisode `json:"items"`
 	Count int              `json:"count"`
 }
 
 func PodcastOrgRequest(url string) []byte {
-	err := godotenv.Load("env.prod")
+	err := godotenv.Load(".env.prod")
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -100,7 +106,7 @@ func PodcastOrgRequest(url string) []byte {
 	return body
 }
 
-func parsePodcastSearchResult(query string) PodSearchResult {
+func ParsePodcastSearchResult(query string) PodSearchResult {
 	url := "https://api.podcastindex.org/api/1.0/search/byterm?q=" + query
 	res := PodcastOrgRequest(url)
 	// Parse json
@@ -112,8 +118,8 @@ func parsePodcastSearchResult(query string) PodSearchResult {
 	return result
 }
 
-func parsePodcastEpisodesByShow(id string) PodcastFeedResult {
-	url := "https://api.podcastindex.org/api/1.0/episodes/byfeedid?id=" + id +"&fulltext"
+func ParsePodcastEpisodesByShow(id string) PodcastFeedResult {
+	url := "https://api.podcastindex.org/api/1.0/episodes/byfeedid?id=" + id + "&fulltext"
 	res := PodcastOrgRequest(url)
 	// Parse json
 	var result PodcastFeedResult
@@ -122,4 +128,16 @@ func parsePodcastEpisodesByShow(id string) PodcastFeedResult {
 		log.Fatal(jsonErr)
 	}
 	return result
+}
+
+func ParseEpisode(id string) PodcastEpisode {
+	url := "https://api.podcastindex.org/api/1.0/episodes/byid?fulltext&id=" + id
+	res := PodcastOrgRequest(url)
+	// Parse json
+	var result PodcastEpisodeResult
+	jsonErr := json.Unmarshal(res, &result)
+	if jsonErr != nil {
+		log.Fatal(jsonErr)
+	}
+	return result.Episode
 }

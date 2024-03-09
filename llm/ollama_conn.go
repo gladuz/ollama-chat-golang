@@ -1,4 +1,4 @@
-package main
+package llm
 
 import (
 	"bufio"
@@ -7,11 +7,8 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{}
 const(
 	CHAT_RESULT = 1
 )

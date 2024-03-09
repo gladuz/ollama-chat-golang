@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"fmt"
@@ -9,12 +9,16 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/a-h/templ"
+	"github.com/gladuz/ollama-chat-golang/db"
+	"github.com/gladuz/ollama-chat-golang/llm"
+	"github.com/gladuz/ollama-chat-golang/ui"
 	"github.com/gorilla/websocket"
 )
 
 func execTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	files := []string{
-		"./templs/base.tmpl",
+		".ui/templs/base.tmpl",
 		tmpl,
 	}
 
@@ -32,11 +36,13 @@ func execTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 }
 
 func HandleIndex(w http.ResponseWriter, r *http.Request){
-	execTemplate(w, "./templs/index.tmpl", nil)
+
+	templ.Handler(ui.Index()).ServeHTTP(w, r)
+	//execTemplate(w, ".ui/templs/index.tmpl", nil)
 }
 
 func HandlePodcastSearchIndex(w http.ResponseWriter, r *http.Request){
-	execTemplate(w, "./templs/podsearch.tmpl", nil)
+	templ.Handler(ui.PodcastSearch()).ServeHTTP(w, r)
 }
 
 func HandlePodcastSearch(w http.ResponseWriter, r *http.Request){
@@ -45,8 +51,8 @@ func HandlePodcastSearch(w http.ResponseWriter, r *http.Request){
 		http.Error(w, "no query", http.StatusBadRequest)
 		return
 	}
-	podSearchResult := parsePodcastSearchResult(query)
-	execTemplate(w, "./templs/podresult.tmpl", podSearchResult)
+	podSearchResult := db.ParsePodcastSearchResult(query)
+	templ.Handler(ui.PodcastSearchResult(podSearchResult)).ServeHTTP(w, r)
 }
 
 func HandlePodcastEpisodesShow(w http.ResponseWriter, r *http.Request){
@@ -55,42 +61,27 @@ func HandlePodcastEpisodesShow(w http.ResponseWriter, r *http.Request){
 		http.Error(w, "no id", http.StatusBadRequest)
 		return
 	}
-	podcast := parsePodcastEpisodesByShow(id)
-	execTemplate(w, "./templs/podcast.tmpl", podcast)
+	podcast := db.ParsePodcastEpisodesByShow(id)
+	templ.Handler(ui.PodcastEpisodesShow(podcast)).ServeHTTP(w, r)
 }
 
-
-
-func HandleChat(w http.ResponseWriter, r *http.Request){
-	messageForm := r.FormValue("message")
-
-	if messageForm == ""{
-		fmt.Println("no message")
-		http.Error(w, "no message", http.StatusBadRequest)
+func HandleEpisodeIndex(w http.ResponseWriter, r *http.Request){
+	id := r.PathValue("id")
+	if id == ""{
+		http.Error(w, "no id", http.StatusBadRequest)
 		return
 	}
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil{
-		log.Fatal("conntection error", err)
-	}
-	ollamaRequestChan := make(chan ModelResponse)
-	OllamaRequest(ollamaRequestChan, messageForm)
-	var chatResponse ModelResponse
-	for chatResponse = range ollamaRequestChan{
-		if err != nil {
-			log.Fatal("json encoding error on message", err)
-		}
-		fmt.Println(chatResponse.Message.Content)
-		err = conn.WriteJSON(chatResponse)
-		if err != nil {
-			log.Println("write:", err)
-		}
-	}
+	episode := db.ParseEpisode(id)
+	templ.Handler(ui.EpisodeIndex(episode)).ServeHTTP(w, r)
+}
 
+func HandleChatIndex(w http.ResponseWriter, r *http.Request){
+	templ.Handler(ui.ChatIndex()).ServeHTTP(w, r)
 }
 
 
 func OpenSocketConn(w http.ResponseWriter, r *http.Request){
+	upgrader := websocket.Upgrader{}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil{
 		log.Fatal("connection error", err)
@@ -106,10 +97,10 @@ func OpenSocketConn(w http.ResponseWriter, r *http.Request){
 			}
 			fmt.Println(string(message))
 			log.Printf("recv: %s, mt: %d", message, mt)
-			if mt == CHAT_RESULT{
-				ollamaRequestChan := make(chan ModelResponse)
-				OllamaRequest(ollamaRequestChan, string(message))
-				var chatResponse ModelResponse
+			if mt == llm.CHAT_RESULT{
+				ollamaRequestChan := make(chan llm.ModelResponse)
+				llm.OllamaRequest(ollamaRequestChan, string(message))
+				var chatResponse llm.ModelResponse
 				for chatResponse = range ollamaRequestChan{
 					if err != nil {
 						log.Fatal("json encoding error on message", err)
