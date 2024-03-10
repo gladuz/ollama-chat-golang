@@ -1,6 +1,6 @@
 package ui
 
-import "github.com/gladuz/ollama-chat-golang/db"
+import "github.com/gladuz/ollama-chat-golang/models"
 import "fmt"
 
 templ PodcastSearch() {
@@ -12,7 +12,7 @@ templ PodcastSearch() {
 	<div id="pod_search_result"></div>
 }
 
-templ PodcastSearchResult(podSearchResult db.PodSearchResult) {
+templ PodcastSearchResult(podSearchResult models.PodsSearchResult) {
 	<div id="pod_search_result">
 		<h2>Search Results</h2>
 		if podSearchResult.Count == 0 {
@@ -28,7 +28,10 @@ templ PodcastSearchResult(podSearchResult db.PodSearchResult) {
 							hx-swap="innerHTML"
 							hx-push-url="true"
 						>{ pod.Title }</a>
-						<button>Add</button>
+						<form hx-put="/podcast/add">
+							<input type="hidden" name="id" value={ fmt.Sprintf("%d", pod.ID) }/>
+							<button type="submit" style="width:auto">Add</button>
+						</form>
 					</div>
 				</article>
 			}
@@ -36,7 +39,7 @@ templ PodcastSearchResult(podSearchResult db.PodSearchResult) {
 	</div>
 }
 
-templ PodcastEpisodesShow(podcastFeed db.PodcastFeedResult) {
+templ PodcastEpisodesShow(podcastFeed models.PodcastFeedResult) {
 	<div id="episodes">
 		if podcastFeed.Count == 0 {
 			<p>No episodes found</p>
@@ -63,11 +66,34 @@ templ PodcastEpisodesShow(podcastFeed db.PodcastFeedResult) {
 	</div>
 }
 
-templ EpisodeIndex(episode db.PodcastEpisode) {
+templ EpisodeIndex(episode models.PodcastEpisode) {
 	<div id="episode">
 		<h2>{ episode.Title }</h2>
 		<p>
 			@templ.Raw(episode.Description)
 		</p>
+	</div>
+}
+
+templ PodcastsIndex(podcast []models.PodcastFeed) {
+	<div id="podcasts">
+		<h2>Podcasts</h2>
+		<div class="grid">
+			<ul>
+				for _, pod := range podcast {
+					<li>
+						<a
+							hx-get={ string(templ.URL(fmt.Sprintf("/podcast/%d", pod.ID))) }
+							hx-target="#content"
+							hx-swap="innerHTML"
+							hx-push-url="true"
+						>{ pod.Title }</a>
+					</li>
+				}
+			</ul>
+		</div>
+		<div class="grid">
+			<button hx-get={ string(templ.URL("/podsearch")) }>Add podcast</button>
+		</div>
 	</div>
 }

@@ -23,7 +23,7 @@ func ChatIndex() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<h1>Podcast Llama</h1><div id=\"chat_container\" class=\"chat_container\"><div id=\"chat_prompt\" class=\"chat_prompt\">Chat with the server</div><div id=\"chat_result\" class=\"chat_result\"></div><p id=\"meta\"></p><form id=\"chat_form\" class=\"chat_form\"><label for=\"message\">Message:</label> <input type=\"text\" id=\"message\" name=\"message\" placeholder=\"Type your message here\"> <button id=\"sender\" type=\"submit\">Send</button></form><script>\n        initSocket();\n        </script></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
